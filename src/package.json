@@ -1,0 +1,31 @@
+{
+  "name": "blunderbot",
+  "version": "1.0.0",
+  "description": "Discord bot that pairs with chess.com",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andyruwruw/BlunderBot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "chess.com",
+    "chess"
+  ],
+  "author": "Andrew Young",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andyruwruw/BlunderBot/issues"
+  },
+  "homepage": "https://github.com/andyruwruw/BlunderBot#readme",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "dotenv": "^8.2.0",
+    "winston": "^3.2.1"
+  }
+}
