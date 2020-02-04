@@ -47,6 +47,7 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
     };
 
     let setup = async() => {
+        console.log("SETTING UP");
         let catagoryIDs = await createCategories();
         await createChannels(catagoryIDs);
     }
@@ -148,57 +149,106 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
                 break;
             }
 
-        for (let category of Object.keys(channels)) {
-            for (let channel of Object.keys(channels[category])) {
+        let categoryKeys = Object.keys(channels);
+        for (let i = 0; i < categoryKeys.length; i++) {
+            for (let j = 0; j < channels[categoryKeys[i]].length; j++) {
                 let exists = false;
                 for (let [key, value] of Object.entries(bot.channels)) 
-                    if (value.name == channel.name && value.type == channel.type && value.guild_id == serverID) exists = true;
+                    if (value.name == channels[categoryKeys[i]][j].name && value.type == channels[categoryKeys[i]][j].type && value.guild_id == serverID) {
+                        exists = true;
+                        console.log("EXISTS");
+                        if (value.parent_id != categoryIDs[categoryKeys[i]]) {
+                            try {
+                                await discord.put('https://discordapp.com/api/channels/' + value.id, {
+                                    parent_id: categoryIDs[categoryKeys[i]],
+                                });
+                            } catch(error) {
+                                console.log("Failed to reset Category");
+                            }
+                        }
+                    }
                 if (exists) continue;
                 try {
                     await discord.post('https://discordapp.com/api/guilds/' + serverID + '/channels', {
-                        name: channel.name,
-                        type: channel.type,
-                        topic: channel.topic,
+                        name: channels[categoryKeys[i]][j].name,
+                        type: channels[categoryKeys[i]][j].type,
+                        topic: channels[categoryKeys[i]][j].topic,
                         rate_limit_per_user: 0,
-                        position: channel.position,
+                        position: channels[categoryKeys[i]][j].position,
                         permission_overwrites: [],
-                        parent_id: categoryIDs[category],
+                        parent_id: categoryIDs[categoryKeys[i]],
                         nsfw: false,
                     });
                 } catch(error) {
                     console.log(error);
-                    await bot.sendMessage({to: channel.id, message: 'Failed to create text channel.'});
                 }
+
+            }
+
+        }
+        let welcomeExists = false;
+        for (let [key, value] of Object.entries(bot.channels)) 
+            if (value.name == 'welcome' && value.type == 0 && value.guild_id == serverID) {
+                welcomeExists = true;
+                if (value.parent_id != null || value.position != 0) {
+                    try {
+                        await discord.put('https://discordapp.com/api/channels/' + value.id, {
+                            position: 0,
+                            parent_id: null,
+                        });
+                    } catch(error) {
+                        console.log(error);
+                    }
+                }
+                break;
+            }
+        if (!welcomeExists) {
+            try {
+                await discord.post('https://discordapp.com/api/guilds/' + serverID + '/channels', {
+                    name: 'welcome',
+                    type: 0,
+                    topic: "Introduce people to the server",
+                    rate_limit_per_user: 0,
+                    position: 0,
+                    permission_overwrites: [],
+                    parent_id: null,
+                    nsfw: false,
+                });
+            } catch(error) {
+                console.log(error);
+                await bot.sendMessage({to: channel.id, message: 'Failed to create welcome channel.'});
             }
         }
-        try {
-            await discord.post('https://discordapp.com/api/guilds/' + serverID + '/channels', {
-                name: 'welcome',
-                type: 0,
-                topic: "Introduce people to the server",
-                rate_limit_per_user: 0,
-                position: 0,
-                permission_overwrites: [],
-                parent_id: null,
-                nsfw: false,
-            });
-        } catch(error) {
-            console.log(error);
-            await bot.sendMessage({to: channel.id, message: 'Failed to create welcome channel.'});
-        }
-        try {
-            await discord.post('https://discordapp.com/api/guilds/' + serverID + '/channels', {
-                name: 'discussion',
-                type: 2,
-                topic: "Voice channel for server.",
-                position: 2,
-                permission_overwrites: [],
-                parent_id: categoryIDs['\u265F General'],
-                nsfw: false,
-            });
-        } catch(error) {
-            console.log(error);
-            await bot.sendMessage({to: channel.id, message: 'Failed to create .voice channel'});
+        let discussionExists = false;
+        for (let [key, value] of Object.entries(bot.channels)) 
+            if (value.name == 'discussion' && value.type == 2 && value.guild_id == serverID) {
+                discussionExists = true;
+                if (value.parent_id != categoryIDs['\u265F General']) {
+                    try {
+                        await discord.put('https://discordapp.com/api/channels/' + value.id, {
+                            parent_id: categoryIDs['\u265F General'],
+                        });
+                    } catch(error) {
+                        console.log(error);
+                    }
+                }
+                break;
+            }
+        if (!discussionExists) {
+            try {
+                await discord.post('https://discordapp.com/api/guilds/' + serverID + '/channels', {
+                    name: 'discussion',
+                    type: 2,
+                    topic: "Voice channel for server.",
+                    position: 2,
+                    permission_overwrites: [],
+                    parent_id: categoryIDs['\u265F General'],
+                    nsfw: false,
+                });
+            } catch(error) {
+                console.log(error);
+                await bot.sendMessage({to: channel.id, message: 'Failed to create .voice channel'});
+            }
         }
     }
 
