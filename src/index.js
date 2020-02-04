@@ -46,14 +46,29 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
         });
     };
 
-    let setup = async() => {
-        console.log("SETTING UP");
-        let catagoryIDs = await createCategories();
-        await createChannels(catagoryIDs);
+    let setup = async(args) => {
+        if (args.length > 0 && args[0] == "understood") {
+            // Retrieving Server ID
+            let serverID;
+            for (let [key, value] of Object.entries(bot.channels)) 
+                if (key == channelID) {
+                    serverID = value.guild_id;
+                    break;
+                }
+
+            // Creating Categories if needed
+            console.log("SETUP");
+            let categoryIDs = await createCategories(serverID);
+
+            // Adding channels to categories
+            await createChannels(serverID, categoryIDs);
+        } else {
+            await bot.sendMessage({to: channelID, message: 'Setup will create new categories and channels.\n`bb!setup understood` to proceed.'});
+        }
     }
 
-    let createCategories = async () => {
-        let catagoryIDs = {};
+    let createCategories = async (serverID) => {
+        let categoryIDs = {};
         let categories = {
             '\u265F General': {present: false, topic: "General Channels.", position: 1},
             '\u2656 Archive': {present: false, topic: "Stores relevent data to users and past games. View old games or stats.", position: 3},
@@ -61,21 +76,15 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
         };
         for (let [id, value] of Object.entries(bot.channels)) 
             for (let key of Object.keys(categories)) 
-                if (value.name == key) {
+                if (value.name == key && value.guild_id == serverID) {
                     categories[key].present = true;
-                    catagoryIDs[key] = value.id;
-                } 
-        let serverID;
+                    categoryIDs[key] = value.id;
+                    break;
+                }
         for (let key of Object.keys(categories)) {
             if (!categories[key].present) {
-                if (!serverID)
-                    for (let [key, value] of Object.entries(bot.channels)) 
-                        if (key == channelID) {
-                            serverID = value.guild_id;
-                            break;
-                        }
                 try {
-                    catagoryIDs[key] = (await discord.post('https://discordapp.com/api/guilds/' + serverID + '/channels', {
+                    let category = await discord.post('https://discordapp.com/api/guilds/' + serverID + '/channels', {
                         name: key,
                         type: 4,
                         topic: categories[key].topic,
@@ -84,17 +93,19 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
                         permission_overwrites: [],
                         parent_id: null,
                         nsfw: false,
-                    })).id
+                    });
+                    categoryIDs[key] = category.data.id;
                 } catch(error) {
                     console.log(error);
                     await bot.sendMessage({to: channel.id, message: 'Failed to create category'});
                 }
             }
         } 
-        return catagoryIDs;
+        return categoryIDs;
     }
 
-    let createChannels = async (categoryIDs) => {
+    let createChannels = async (serverID, categoryIDs) => {
+        console.log(categoryIDs);
         let channels = {
             // welcome -> text chat
             '\u265F General': [
@@ -114,19 +125,19 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
             ],
             '\u2656 Archive': [
                 {
-                    name: "access archives",
+                    name: "access",
                     type: 0,
                     topic: "View Archive Data.",
                     position: 0,
                 },
                 {
-                    name: "game archive",
+                    name: "game-archive",
                     type: 0,
                     topic: "Blunder Bot's chat for storing game data.",
                     position: 1,
                 },
                 {
-                    name: "profiles archive",
+                    name: "profile-archive",
                     type: 0,
                     topic: "Blunder Bot's chat for storing user information (win / loss rate)",
                     position: 2,
@@ -142,13 +153,6 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
             ],
         };
 
-        let serverID;
-        for (let [key, value] of Object.entries(bot.channels)) 
-            if (key == channelID) {
-                serverID = value.guild_id;
-                break;
-            }
-
         let categoryKeys = Object.keys(channels);
         for (let i = 0; i < categoryKeys.length; i++) {
             for (let j = 0; j < channels[categoryKeys[i]].length; j++) {
@@ -156,7 +160,6 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
                 for (let [key, value] of Object.entries(bot.channels)) 
                     if (value.name == channels[categoryKeys[i]][j].name && value.type == channels[categoryKeys[i]][j].type && value.guild_id == serverID) {
                         exists = true;
-                        console.log("EXISTS");
                         if (value.parent_id != categoryIDs[categoryKeys[i]]) {
                             try {
                                 await discord.put('https://discordapp.com/api/channels/' + value.id, {
@@ -184,8 +187,8 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
                 }
 
             }
-
         }
+        
         let welcomeExists = false;
         for (let [key, value] of Object.entries(bot.channels)) 
             if (value.name == 'welcome' && value.type == 0 && value.guild_id == serverID) {
@@ -366,7 +369,7 @@ bot.on('message', async function (user, userID, channelID, message, evt) {
             // bb!setup
             // Formats Server
             case 'setup':
-                setup();
+                setup(args);
                 break;
             // bb!game <player_name> <player_name> <gameID>
             // Creates new channel for tracking and talking about game
