@@ -1,7 +1,7 @@
 # BlunderBot
 Discord bot that pairs with chess.com.
 
-References
+## References
 
 [Chess.com API](https://www.chess.com/news/view/published-data-api)
 
