@@ -41,13 +41,13 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         console.log(response.data);
     };
 
-    let invalid = async () => {
-        await bot.sendMessage({to: channelID, message: 'That\'s a Blunder.\nTry `!help` for options.'});
-    };
-
     let help = async() => {
         await bot.sendMessage({to: channelID, message: 'Discoveries:\n`!help` - for BlunderBot Commands.\n`!game <player1> <player2> <gameID>` - Start tracking a game. GameID is in the URL or '});
     }
+
+    let invalid = async () => {
+        await bot.sendMessage({to: channelID, message: 'That\'s a Blunder.\nTry `!help` for options.'});
+    };
 
     if (message.substring(0, 1) == '!') {
         var args = message.substring(1).split(' ');
@@ -59,12 +59,15 @@ bot.on('message', function (user, userID, channelID, message, evt) {
             case 'check':
                 check();
                 break;
+            // !game
             case 'game':
                 game(args);
                 break;
+            // !help
             case 'help':
                 help();
                 break;
+            // !invalid
             default: 
                 invalid();
                 break;
