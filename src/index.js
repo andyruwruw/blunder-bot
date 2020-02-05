@@ -1,36 +1,37 @@
+// Dependencies
 var Discord = require('discord.io');
 var logger = require('winston');
 var axios = require('axios');
 let dotenv = require('dotenv');
+//import jimp from 'jimp';
+
+// Secret Token Kept in .env
+// Retrieving using dotenv
 dotenv.config();
 let discordToken = process.env.discordToken;
 
-//import jimp from 'jimp';
-
-logger.remove(logger.transports.Console);
-logger.add(new logger.transports.Console, {
-    colorize: true
-});
-logger.level = 'debug';
-
+// Discord Secret added to an INSTANCE of axios
+// Axios is used to make API calls.
 let discord = axios.create({
     headers: {
-        common: {        // can be common or any other method
+        common: {  // Sets for all call methods
             Authorization: 'Bot ' + discordToken,
         }
     }
 });
 
+// Creates instance of discord.io
 var bot = new Discord.Client({
    token: discordToken,
    autorun: true
 });
 
+// Upon Connection to server
 bot.on('ready', function (evt) {
-    logger.info('Connected');
-    logger.info('Logged in as: ');
-    logger.info(bot.username + ' - (' + bot.id + ')');
+    console.log('Connected to Server');
+    console.log(bot.username + ' - (' + bot.id + ')');
 
+    // Chess.com doesn't allow more than one request at a time.
     let wait = async () => {
         while (true) {
             setTimeout(function() {
@@ -40,23 +41,19 @@ bot.on('ready', function (evt) {
         }
     }
 
-
+    // Runs through que of chess.com game checks.
     let check = async () => {
         await wait();
         bot.api_clear = false;
         console.log("hello");
         bot.api_clear = true;
     };
-    
+
+    // Runs check every 5 seconds. 
     bot.chess_interval = setInterval(check, 5000);
 });
 
-// THINGS TO WORK ON
-    // DELETE USER MADE MESSAGES IN ARCHIVE
-    // CHECK CHANNEL FOR COMMANDS
-    // VIEW GAMES
-    // TRACK GAMES
-
+// Commands
 bot.on('message', async function (user, userID, channelID, message, evt) {
 
     let check = () => {
