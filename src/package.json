@@ -26,6 +26,7 @@
     "axios": "^0.19.2",
     "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
     "dotenv": "^8.2.0",
+    "jimp": "^0.9.3",
     "winston": "^3.2.1"
   }
 }
