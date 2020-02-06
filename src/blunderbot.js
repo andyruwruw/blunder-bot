@@ -54,7 +54,7 @@ class BlunderBot extends Discord.Client {
         let channel = this.channels[channelID];
         let server = this.servers[channel.guild_id];
         // Check if its in the right channel.
-        if (!(await this.checkChannel(cmd, channel.name, channelID))) return;
+        if (!(await this.checkChannel(cmd, channel.name, channelID, evt))) return;
         switch(cmd) {
             case 'check':
                 this.checkCommand(channelID);
@@ -322,12 +322,66 @@ class BlunderBot extends Discord.Client {
         let request = response.req;
         let data = response.data;
 
-        console.log(data);
-        let found = 0;
-
-        
-
+        if (data == null) {
+            this.sendMessage({ to: request.channelID, message: 'Blunder.\nUser not found.!' });
+            return;
+        }
+        let game = null;
+        let possible;
+        if (request.gameID == null) possible = [];
+        for (let i = 0; i < data.games.length; i++) {
+            let white = data.games[i].white.substring(33, data.games[i].white.length).toLowerCase();
+            let black = data.games[i].black.substring(33, data.games[i].black.length).toLowerCase();
+            let id = data.games[i].url.substring((data.games[i].url.length - 9), data.games[i].url.length);
+            if ((white == request.player1.toLowerCase() && black == request.player2.toLowerCase()) || (white == request.player2.toLowerCase() && black == request.player1.toLowerCase())) {
+                if (request.gameID == null) {
+                    possible.push(i);
+                    continue;
+                } else {
+                    if (id == request.gameID) {
+                        game = data.games[i];
+                        break;
+                    }
+                }
+            }
+        }
+        if (request.gameID == null) {
+            if (possible.length == 1) {
+                game = data.games[possible[0]];
+            } else if (possible.length > 1) {
+                await this.sendMessage({to: request.channelID, message: 'You both have more than 1 game currently active.\nPlease clarify game ID in command.\n`bb!game <player1> <player2> <gameID>`\n'});
+                return;
+            } else if (possible.length == 0) {
+                await this.sendMessage({to: request.channelID, message: 'No Games Found'});
+                return;
+            }
+        }
+        //let pgnData = await pgnEditor(game.pgn);
+        game.id = game.url.substring((game.url.length - 9), game.url.length);
+        // game.moves = pgn.moves;
+        game.white = game.white.substring(33, game.white.length);
+        game.black = game.black.substring(33, game.black.length);
+    
+        console.log(game);
     }
+
+    // async pgnEditor(pgn) {
+    //     let values = [
+    //         {match: "Result", value: null},
+    //         {match: "Result", value: null},
+    //         {},
+    //         {}
+    //     ];
+    //     let newPGN = pgn.split('\n');
+    //     for (let i = 0; i < newPGN.length; i++) {
+
+    //     }
+
+
+    //     return {
+    //         moves: 
+    //     }
+    // }
 
     async updateGames() {
 
@@ -356,7 +410,7 @@ class BlunderBot extends Discord.Client {
     }
 
     // Ensures commands are being run the right channel.
-    async checkChannel(cmd, channel, channelID) {
+    async checkChannel(cmd, channel, channelID, evt) {
         let schema = this._channels.map(channel => channel.name);
         let index = schema.indexOf(channel);
         if (index == -1) {
@@ -371,7 +425,12 @@ class BlunderBot extends Discord.Client {
             for (let i = 0; i < this._permissions[cmd].length; i++) 
                 if (this._permissions[cmd][i]) 
                     valid += " `" + schema[i] + "`";
-            await this.sendMessage({to: channelID, message: 'Blunder.\nThis command can only be run in' + valid + '.\n'});
+            try {
+            //console.log( await this._discordAPI.delete('/channels/' + channelID + '/messages/' + evt.d.id));
+            this.sendMessage({to: channelID, message: 'Blunder.\nThis command can only be run in' + valid + '.\n'});
+            } catch(error) {
+                console.log(error);
+            }
         }
     }
 

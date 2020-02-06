@@ -79,7 +79,10 @@ class ChessAPI {
             return final;
         } catch(error) {
             console.log(error);
-            return null;
+            return {
+                req: request,
+                data: null,
+            };
         }
     }
 
