@@ -3,7 +3,7 @@ let dotenv = require('dotenv');
 //import jimp from 'jimp';
 
 // Importing class
-let BlunderBot = require('./blunderbot.js');
+let BlunderBot = require('./scripts/blunderbot.js');
 
 // Secret Token Kept in .env
 // Retrieving using dotenv
