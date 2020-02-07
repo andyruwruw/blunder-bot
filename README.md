@@ -15,11 +15,15 @@ Discord bot that pairs with chess.com.
 
 ## 1. Using BlunderBot
 
-### Inviting to Server
+### A. Inviting Blunder Bot
 
 - [Visit Here](https://discordapp.com/oauth2/authorize?&client_id=675064106423943178&scope=bot&permissions=8) to invite BlunderBot.
 
-### Custom Blunder Bot (For My Fellow Coders)
+### B. Running Blunder Bot
+
+- `$ npm run start` from `src` directory.
+
+### C. Custom Blunder Bot (For My Fellow Coders)
 
 - I built scripts for you to easily start creating your own Custom Bot! [Visit here](./src/customize/README.md) for instructions.
 
@@ -30,20 +34,20 @@ Discord bot that pairs with chess.com.
 *(Click for more details on each)*
 
 - General
-    - [general (text channel)](#general-(text-channel))
-    - [leaderboards (text channel)](#leaderboards-(text-channel))
-    - [discussion (voice channel)](#discussion-(voice-channel))
+    - [general (text channel)](#--`general-(text-channel)`)
+    - [leaderboards (text channel)](#--`leaderboards-(text-channel)`)
+    - [discussion (voice channel)](#--`discussion-(voice-channel)`)
 - Active Games
-    - [lobby (text channel)](#(active-games)-lobby-(text-channel))
-    - [*game channels* (text channel)](#*game-channels*-(text-channel))
+    - [lobby (text channel)](#--`(active-games)-lobby-(text-channel)`)
+    - [*game channels* (text channel)](#--`*game-channels*-(text-channel)`)
 - Tournament
-    - [lobby (text channel)](#(tournament)-lobby-(text-channel))
-    - [tournament (text channel)](#tournament-(text-channel))
-    - [*game channels* (text channel)](#*game-channels*-(text-channel))
+    - [lobby (text channel)](#--`(tournament)-lobby-(text-channel)`)
+    - [tournament (text channel)](#--`tournament-(text-channel)`)
+    - [*game channels* (text channel)](#--`*game-channels*-(text-channel)`)
 - Archive
-    - [access (text-channel)](#access-(text-channel))
-    - [profile-archive (text-channel)](#profile-archive-(text-channel))
-    - [game-archive (text-channel)](#game-archive-(text-channel))
+    - [access (text-channel)](#--`access-(text-channel)`)
+    - [profile-archive (text-channel)](#--`profile-archive-(text-channel)`)
+    - [game-archive (text-channel)](#--`game-archive-(text-channel)`)
 
 
 
@@ -86,45 +90,44 @@ Discord bot that pairs with chess.com.
 
 ## 4. Channels Extended
 
-### General Channels
-
-- `general (text channel)`
-    - **Purpose:** General chat for public discussion.
-    - **Permissions:** Open
-    - **Commands:** `-`
-- `leaderboards (text channel)`
-    - **Purpose:** Logs win ratios after each completed match.
-    - **Permissions:** BlunderBot Only
-- `discussion (voice channel)`
-    - **Purpose:** Voice channel for discussion
-    - **Permissions:** Open
-    - **Commands:** `-`
-- `*game channels* (text channel)`
-    - **Purpose:** Created for each match, tracks and displays each move.
-    - **Permissions:** Open
-    - **Commands:** `-`
-### Active Games
-- `(active games) lobby (text channel)`
-    - **Purpose:** Start tracking a match, used for commands.
-    - **Permissions:** Open
-    - **Commands:** `bb!game`
-### Tournament
-- `(tournament) lobby (text channel)`
-    - **Purpose:** Start a tournament, used for commands.
-    - **Permissions:** Open
-    - **Commands:** `bb!tournament`
-- `tournament (text channel)`
-    - **Purpose:** Displays the bracket for the current tournament and instructs players for matchmaking. 
-    - **Permissions:** BlunderBot Only
-### Archive
-- `access (text-channel)`
-    - **Purpose:** Used to access data from the archive, old games or profiles.
-    - **Permissions:** Open
-    - **Commands:** `bb!archive games`, `bb!archive profile`
-- `profile-archive (text channel)`
-    - **Purpose:** Database for profiles, access data through [access (text-channel)](#access-(text-channel))
-    - **Permissions:** BlunderBot Only
-- `game-archive (text channel)`
-    - **Purpose:** Database for games, access data through [access (text-channel)](#access-(text-channel))
-    - **Permissions:** BlunderBot Only
+### **General Channels**
+### - `general (text channel)`
+- **Purpose:** General chat for public discussion.
+- **Permissions:** Open
+- **Commands:** `-`
+### - `leaderboards (text channel)`
+- **Purpose:** Logs win ratios after each completed match.
+- **Permissions:** BlunderBot Only
+### - `discussion (voice channel)`
+- **Purpose:** Voice channel for discussion
+- **Permissions:** Open
+- **Commands:** `-`
+### - `*game channels* (text channel)`
+- **Purpose:** Created for each match, tracks and displays each move.
+- **Permissions:** Open
+- **Commands:** `-`
+### **Active Games**
+### - `(active games) lobby (text channel)`
+- **Purpose:** Start tracking a match, used for commands.
+- **Permissions:** Open
+- **Commands:** `bb!game`
+### **Tournament**
+### - `(tournament) lobby (text channel)`
+- **Purpose:** Start a tournament, used for commands.
+- **Permissions:** Open
+- **Commands:** `bb!tournament`
+### - `tournament (text channel)`
+- **Purpose:** Displays the bracket for the current tournament and instructs players for matchmaking. 
+- **Permissions:** BlunderBot Only
+### **Archive**
+### - `access (text-channel)`
+- **Purpose:** Used to access data from the archive, old games or profiles.
+- **Permissions:** Open
+- **Commands:** `bb!archive games`, `bb!archive profile`
+### - `profile-archive (text channel)`
+- **Purpose:** Database for profiles, access data through [access (text-channel)](#access-(text-channel))
+- **Permissions:** BlunderBot Only
+### - `game-archive (text channel)`
+- **Purpose:** Database for games, access data through [access (text-channel)](#access-(text-channel))
+- **Permissions:** BlunderBot Only
 

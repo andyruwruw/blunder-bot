@@ -1,6 +1,5 @@
 // Dependencies
 let dotenv = require('dotenv');
-//import jimp from 'jimp';
 
 // Importing class
 let BlunderBot = require('./scripts/blunderbot.js');

@@ -1,8 +1,9 @@
 // Dependencies
-var Discord = require('discord.io');
-var ChessAPI = require('./chessapi.js');
-var axios = require('axios');
-const EventEmitter = require('events');
+let Discord = require('discord.io');
+let ChessAPI = require('./chessapi.js');
+let BoardToImage = require('./boardtoimage.js');
+let fs = require('fs');
+let axios = require('axios');
 
 // Inherits from Discord.io Web Socket
 // Adds functionality
@@ -33,6 +34,7 @@ class BlunderBot extends Discord.Client {
         // Passes instance so it can call post-call functions
         this._chessAPI = new ChessAPI(this);
         this._trackedGames = [];
+        this._imageCreator = new BoardToImage();
     }
 
     // Upon Connection to Discord => Log Instance
@@ -53,6 +55,14 @@ class BlunderBot extends Discord.Client {
         // Variables for instance
         let channel = this.channels[channelID];
         let server = this.servers[channel.guild_id];
+        try {
+            let image = await this.generateBoardImage(null, 'penis');
+            console.log(image);
+            this.sendImage({to: channelID, file: image});
+        } catch(error) {
+            console.log(error);
+        }
+        return;
         // Check if its in the right channel.
         if (!(await this.checkChannel(cmd, channel.name, channelID, evt))) return;
         switch(cmd) {
@@ -116,6 +126,17 @@ class BlunderBot extends Discord.Client {
     // Response "Mate!"
     async checkCommand(channelID) {
         this.sendMessage({ to: channelID, message: 'MATE!' });
+        this.sendImage({to: channelID, file: './resources/geri.jpg'});
+    }
+
+    // I thought it was tedious to do this each time so heres a function that makes it like sending messages.
+    // @params options = { to: channelID, file: path }
+    async sendImage(options) {
+        let pathSplit = await options.file.split('/');
+        let filename = pathSplit[pathSplit.length - 1];
+        let file = await fs.readFileSync(options.file);
+        console.log(file);
+        this.uploadFile( { to: options.to, file: file, filename: filename});
     }
 
     // bb!setup 
@@ -298,7 +319,12 @@ class BlunderBot extends Discord.Client {
     async gameCommand(args, server, channelID) {
         // Check command has correct arguments
         if (args.length < 2) {
-            this.sendMessage({to: channelID, message: 'Blunder.\nTry `bb!game <player1> <player2> <gameID>`.'})
+            this.sendMessage({to: channelID, message: 'Blunder.\nTry `bb!game <player1> <player2> <gameID>`.'});
+            return;
+        }
+        if (this._serverKeys[server.id].categories['\u265A Active Games'] == null) {
+            this.notSetup(channelID, 'bb!game');
+            return;
         }
         // Generates Request to be Sent
         let request = {
@@ -356,32 +382,118 @@ class BlunderBot extends Discord.Client {
                 return;
             }
         }
-        //let pgnData = await pgnEditor(game.pgn);
         game.id = game.url.substring((game.url.length - 9), game.url.length);
-        // game.moves = pgn.moves;
-        game.white = game.white.substring(33, game.white.length);
-        game.black = game.black.substring(33, game.black.length);
-    
-        console.log(game);
+        for (let i = 0; i < this._trackedGames.length; i++) {
+            if (this._trackedGames[i].id == game.id) {
+                await this.sendMessage({to: request.channelID, message: 'Already tracking this game.`\n'});
+                return;
+            }
+        }
+        game = await this.generateGameObject(game, request.serverID, null);
+
+        try {
+            let time = new Date(game.start_time);
+            let response = await this._discordAPI.post('/guilds/' + request.serverID + '/channels', {
+                name: game.white + '-VS-' + game.black + '-(' + game.id + ")",
+                type: 0,
+                topic: 'Game between ' + game.white + '(white) and ' + game.black + '(black). Started ' + (time.getMonth() + 1) + '/' + time.getDate() + '/' + time.getUTCFullYear(),
+                rate_limit_per_user: 0,
+                position: 1,
+                permission_overwrites: [],
+                parent_id: this._serverKeys[request.serverID].categories['\u265A Active Games'],
+                nsfw: false,
+            });
+            game.channelID = response.data.id;
+            this.sendMessage({to: response.data.id, message: '**' + game.white.toUpperCase() + ' VS ' + game.black.toUpperCase() + '**\n\n**Match Began**:\n`' + (time.getMonth() + 1) + '/' + time.getDate() + '/' + time.getUTCFullYear() + '`\n**White**:\n`' + game.white + ' (' + game.whiteElo+ ')`\n**Black**:\n`' + game.black + ' (' + game.blackElo + ')`\n**Game URL**:\n' + game.url + '\n\n'});
+        } catch(error) {
+            console.log(error);
+            this.sendMessage({to: request.channelID, message: 'Error creating channel!\n'});
+            return;
+        }
     }
 
-    // async pgnEditor(pgn) {
-    //     let values = [
-    //         {match: "Result", value: null},
-    //         {match: "Result", value: null},
-    //         {},
-    //         {}
-    //     ];
-    //     let newPGN = pgn.split('\n');
-    //     for (let i = 0; i < newPGN.length; i++) {
+    async generateGameObject(game, serverID, channelID) {
+        let pgnData = await this.processPGN(game.pgn);
+        game.white = game.white.substring(33, game.white.length);
+        game.black = game.black.substring(33, game.black.length);
+        game.board = await this.processBoard(game.fen);
+        game.moves = pgnData["Moves"];
+        game.whiteElo = pgnData["WhiteElo"];
+        game.blackElo = pgnData["BlackElo"];
+        game.serverID = serverID;
+        game.channelID = channelID;
+        return game;
+    }
 
-    //     }
+    async generateBoardImage(board, gameID) {
+        return await this._imageCreator.createImage({type: 'array', board: board, path: './resources/rendered/' + gameID + '.png'});
+    }
 
+    notSetup(channelID, command) {
+        this.sendMessage({to: channelID, message: 'This server is not setup for that yet.\nUse `bb!setup` to use `' + command + '`'});
+    }
 
-    //     return {
-    //         moves: 
-    //     }
-    // }
+    processBoard(fen) {
+        let board = [];
+        let rows = fen.split('/');
+        let empty = ['1', '2', '3', '4', '5', '6', '7', '8'];
+        for (let i = 0; i < 8; i++) {
+            board.push([]);
+            for (let j = 0; j < 8; j++) {
+                if (j == rows[i].length) break;
+                if (rows[i].charAt(j) == " ") break;
+                if (empty.includes(rows[i].charAt(j))) 
+                    for (let k = 0; k < (empty.indexOf(rows[i].charAt(j)) + 1); k++) 
+                        board[i].push(""); 
+                 else board[i].push(rows[i].charAt(j));
+            }
+        }
+        return board;
+    }
+
+    processPGN(pgn) {
+        let data = {
+            "Result": null,
+            "WhiteElo": null,
+            "BlackElo": null,
+            "Moves": null
+        };
+        let pgnSplit = pgn.split('\n');
+        for (let i = 0; i < pgnSplit.length; i++) {
+            if (pgnSplit[i] == '') break;
+            let titleIndex = pgnSplit[i].indexOf(' ');
+            let title = pgnSplit[i].substring(1, titleIndex);
+            if (title in data) {
+                let start = pgnSplit[i].indexOf('"');
+                let end = pgnSplit[i].indexOf('"', (start + 1));
+                let value = pgnSplit[i].substring(start + 1, end);
+                data[title] = value;
+            }
+        }
+        let moves = [];
+        let movesSplit = pgnSplit[pgnSplit.length - 1].split(' ');
+        let state = 0;
+        for (let i = 0; i < movesSplit.length; i++) {
+            if (state == 0) {
+                let turnIndex = movesSplit[i].indexOf('.');
+                let turnNum = movesSplit[i].substring(0, turnIndex);
+                if (moves.length < parseInt(turnNum, 10)) {
+                    moves.push([]);
+                }
+                state += 1;
+            } else if (state == 1) {
+                moves[moves.length - 1].push(movesSplit[i]);
+                state += 1;
+            } else if (state == 2) {
+                i++;
+                state = 0;
+                continue;
+            }
+        }
+        data["Moves"] = moves;
+        return data;
+    }
+
 
     async updateGames() {
 
@@ -391,15 +503,15 @@ class BlunderBot extends Discord.Client {
     // Lists Available commands
     helpCommand(channelID) {
         let message = "";
-        message += "**BlunderBot Discoveries:**bb!\n\n";
-        message += "`bb!check`\n\t\t*- Mate!*\n\n";
-        message += "`bb!help`\n\t\t*- List of commands.*\n\n";
-        message += "`bb!setup`\n\t\t*- Reorginize server for BlunderBot.*\n\n";
-        message += "`bb!game <player1> <player2> <gameID>`\n\t\t*- Create a new chat and start tracking a game.\n\t\tGameID only needed if you have more than 1 active game.\n\t\t- Run in `lobby-ag`*\n\n";
-        message += "`bb!tournament <player> <player>...`\n\t\t*- Create new tournament.\n\t\tOptionally add `double-elim` before player names.\n\t\t- Run in `lobby-t`*\n\n";
-        message += "`bb!archive games <player>`\n\t\t*- View list of archived games.\n\t\t- Run in `access`*\n\n";
-        message += "`bb!archive games <player> <index>`\n\t\t*- Choose a game by index to run through.\n\t\t- Run in `access`*\n\n";
-        message += "`bb!archive profile <player>`\n\t\t*- View a player's stats.\n\t\t- Run in `access`*\n\n";
+        message += "**BlunderBot Commands:**\n";
+        message += "`bb!check`\n\t\t- *Mate!*\n";
+        message += "`bb!help`\n\t\t- *List of commands.*\n";
+        message += "`bb!setup`\n\t\t- *Reorginize server for BlunderBot.*\n";
+        message += "`bb!game <player1> <player2> <gameID>`\n\t\t- *Create a new chat and start tracking a game.*\n\t\t- *GameID only needed if you have more than 1 active game.*\n\t\t- *Run in `lobby-ag`*\n";
+        message += "`bb!tournament <player> <player>...`\n\t\t- *Create new tournament.*\n\t\t- *Optionally add `double-elim` before player names.*\n\t\t- *Run in `lobby-t`*\n";
+        message += "`bb!archive games <player>`\n\t\t- *View list of archived games.*\n\t\t- *Run in `access`*\n";
+        message += "`bb!archive games <player> <index>`\n\t\t- *Choose a game by index to run through.*\n\t\t- *Run in `access`*\n";
+        message += "`bb!archive profile <player>`\n\t\t- *View a player's stats.*\n\t\t- *Run in `access`*\n";
         this.sendMessage({to: channelID, message: message});
     }
 
