@@ -55,14 +55,6 @@ class BlunderBot extends Discord.Client {
         // Variables for instance
         let channel = this.channels[channelID];
         let server = this.servers[channel.guild_id];
-        try {
-            let image = await this.generateBoardImage(null, 'penis');
-            console.log(image);
-            this.sendImage({to: channelID, file: image});
-        } catch(error) {
-            console.log(error);
-        }
-        return;
         // Check if its in the right channel.
         if (!(await this.checkChannel(cmd, channel.name, channelID, evt))) return;
         switch(cmd) {
@@ -127,16 +119,6 @@ class BlunderBot extends Discord.Client {
     async checkCommand(channelID) {
         this.sendMessage({ to: channelID, message: 'MATE!' });
         this.sendImage({to: channelID, file: './resources/geri.jpg'});
-    }
-
-    // I thought it was tedious to do this each time so heres a function that makes it like sending messages.
-    // @params options = { to: channelID, file: path }
-    async sendImage(options) {
-        let pathSplit = await options.file.split('/');
-        let filename = pathSplit[pathSplit.length - 1];
-        let file = await fs.readFileSync(options.file);
-        console.log(file);
-        this.uploadFile( { to: options.to, file: file, filename: filename});
     }
 
     // bb!setup 
@@ -391,6 +373,7 @@ class BlunderBot extends Discord.Client {
         }
         game = await this.generateGameObject(game, request.serverID, null);
 
+
         try {
             let time = new Date(game.start_time);
             let response = await this._discordAPI.post('/guilds/' + request.serverID + '/channels', {
@@ -404,11 +387,167 @@ class BlunderBot extends Discord.Client {
                 nsfw: false,
             });
             game.channelID = response.data.id;
-            this.sendMessage({to: response.data.id, message: '**' + game.white.toUpperCase() + ' VS ' + game.black.toUpperCase() + '**\n\n**Match Began**:\n`' + (time.getMonth() + 1) + '/' + time.getDate() + '/' + time.getUTCFullYear() + '`\n**White**:\n`' + game.white + ' (' + game.whiteElo+ ')`\n**Black**:\n`' + game.black + ' (' + game.blackElo + ')`\n**Game URL**:\n' + game.url + '\n\n'});
+            this.sendMessage({to: game.channelID, message:  'Match Began: ' + (time.getMonth() + 1) + '/' + time.getDate() + '/' + time.getUTCFullYear() + '\nWhite: ' + game.white + ' (' + game.whiteElo+ ')\nBlack: ' + game.black + ' (' + game.blackElo + ')\nGame URL: ' + game.url + '\n\n'});
+            try {
+                let image = await this.generateBoardImage(game.board, game.id);
+                this.sendMessage({to: game.channelID, message:  'Current Position:'});
+                this.sendImage({to: game.channelID, file: image});
+            } catch(error) {
+                console.log(error);
+            }
         } catch(error) {
             console.log(error);
             this.sendMessage({to: request.channelID, message: 'Error creating channel!\n'});
             return;
+        }
+    }
+
+    // bb!help
+    // Lists Available commands
+    helpCommand(channelID) {
+        let message = "";
+        message += "**BlunderBot Commands:**\n";
+        message += "`bb!check`\n\t\t- *Mate!*\n";
+        message += "`bb!help`\n\t\t- *List of commands.*\n";
+        message += "`bb!setup`\n\t\t- *Reorginize server for BlunderBot.*\n";
+        message += "`bb!game <player1> <player2> <gameID>`\n\t\t- *Create a new chat and start tracking a game.*\n\t\t- *GameID only needed if you have more than 1 active game.*\n\t\t- *Run in `lobby-ag`*\n";
+        message += "`bb!tournament <player> <player>...`\n\t\t- *Create new tournament.*\n\t\t- *Optionally add `double-elim` before player names.*\n\t\t- *Run in `lobby-t`*\n";
+        message += "`bb!archive games <player>`\n\t\t- *View list of archived games.*\n\t\t- *Run in `access`*\n";
+        message += "`bb!archive games <player> <index>`\n\t\t- *Choose a game by index to run through.*\n\t\t- *Run in `access`*\n";
+        message += "`bb!archive profile <player>`\n\t\t- *View a player's stats.*\n\t\t- *Run in `access`*\n";
+        this.sendMessage({to: channelID, message: message});
+    }
+
+    // bb!*
+    // For Blunders
+    invalidCommand(channelID) {
+        this.sendMessage({to: channelID, message: 'That\'s a Blunder.\nTry `bb!help` for options.'});
+    }
+
+    // Ensures commands are being run the right channel.
+    async checkChannel(cmd, channel, channelID, evt) {
+        let schema = this._channels.map(channel => channel.name);
+        let index = schema.indexOf(channel);
+        if (index == -1) {
+            return true;
+        } else if (!(cmd in this._permissions)) {
+            this.invalidCommand(channelID);
+            return false;
+        } else if (this._permissions[cmd][index]){
+            return true;
+        } else {
+            let valid = "";
+            for (let i = 0; i < this._permissions[cmd].length; i++) 
+                if (this._permissions[cmd][i]) 
+                    valid += " `" + schema[i] + "`";
+            try {
+            //console.log( await this._discordAPI.delete('/channels/' + channelID + '/messages/' + evt.d.id));
+            this.sendMessage({to: channelID, message: 'Blunder.\nThis command can only be run in' + valid + '.\n'});
+            } catch(error) {
+                console.log(error);
+            }
+        }
+    }
+
+    notSetup(channelID, command) {
+        this.sendMessage({to: channelID, message: 'This server is not setup for that yet.\nUse `bb!setup` to use `' + command + '`'});
+    }
+
+    async updateGames() {
+
+    }
+
+    async startTracking() {
+        
+    }
+
+    // Sets some variables
+    async inicializeServerStructure() {
+        this._permissions = {
+            'check': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'sorry': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'cyrus': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'blunder': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'start': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'hi': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'Qh5': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'help': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'setup': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'game': [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            'tournament': [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+            'archive': [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+        };
+        this._channels = [
+            {name: 'welcome', type: 0, topic: '', position: 0, permission_overwrites: true, category: null},
+            {name: 'general', type: 0, topic: 'General chat', position: 0, permission_overwrites: false, category: '\u265F General'},
+            {name: 'leaderboards', type: 0, topic: 'Leaderboards and winnings.', position: 1, permission_overwrites: true, category: '\u265F General'},
+            {name: 'discussion', type: 2, topic: 'General voice channel.', position: 2, permission_overwrites: false, category: '\u265F General'},
+            {name: 'lobby-ag', type: 0, topic: 'Start tracking games.', position: 0, permission_overwrites: false, category: '\u265A Active Games'},
+            {name: 'lobby-t', type: 0, topic: 'Start tournaments.', position: 0, permission_overwrites: false, category: '\u265C Tournament'},
+            {name: 'tournament', type: 0, topic: 'Brackets and stats on current tournament.', position: 1, permission_overwrites: true, category: '\u265C Tournament'},
+            {name: 'access', type: 0, topic: 'View Archive Data.', position: 0, permission_overwrites: false, category: '\u265D Archive'},
+            {name: 'game-archive', type: 0, topic: 'Blunder Bot\'s chat for storing game data.', position: 1, permission_overwrites: true, category: '\u265D Archive'},
+            {name: 'profile-archive', type: 0, topic: 'Blunder Bot\'s chat for storing user information (win / loss rate)', position: 2, permission_overwrites: true, category: '\u265D Archive'},
+        ];
+        this._categories = {
+            '\u265F General': {present: false, topic: "General Channels.", position: 1},
+            '\u265A Active Games': {present: false, topic: "Text channels and live updates from tracked games.", position: 2},
+            '\u265C Tournament': {present: false, topic: "Tournament matches", position: 3},
+            '\u265D Archive': {present: false, topic: "Stores relevent data to users and past games. View old games or stats.", position: 4},
+        };
+    }
+
+    // Servers, Roles and Channels are stored in the Discord.io bot linked only by ID's
+    // Instead of searching for the right channel in the right server each time, this function saves ID's relevent to each server.
+    async processCurrentServers() {
+        this._serverKeys = {};
+        let serverIDs = Object.keys(this.servers);
+        for (let i = 0; i < serverIDs.length; i++) {
+            let serverInstance = {
+                setup: false,
+                channels: {
+                    'welcome': null,
+                    'general': null,
+                    'leaderboards': null,
+                    'discussion': null,
+                    'lobby-ag': null,
+                    'lobby-t': null,
+                    'tournament': null,
+                    'access': null,
+                    'game-archive': null,
+                    'profile-archive': null,
+                },
+                categories: {
+                    '\u265F General': null,
+                    '\u265A Active Games': null,
+                    '\u265C Tournament': null,
+                    '\u265D Archive':null
+                },
+                roles: {
+                    king: null,
+                    queen: null,
+                    pawns: null,
+                    everyone: null,
+                },
+            }
+            let channelIDs = Object.keys(this.channels);
+            for (let j = 0; j < channelIDs.length; j++) {
+                if (this.channels[channelIDs[j]].guild_id != serverIDs[i]) continue;
+                if (this.channels[channelIDs[j]].name in serverInstance.channels) {
+                    serverInstance.channels[this.channels[channelIDs[j]].name] = channelIDs[j];
+                } else if (this.channels[channelIDs[j]].name in serverInstance.categories) {
+                    serverInstance.setup = true;
+                    serverInstance.categories[this.channels[channelIDs[j]].name] = channelIDs[j];
+                }
+            }
+            let roleIDs = Object.keys(this.servers[serverIDs[i]].roles)
+            for (let j = 0; j < roleIDs.length; j++) {
+                if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "king") serverInstance.roles.king = roleIDs[j];
+                else if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "queen") serverInstance.roles.queen = roleIDs[j];
+                else if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "pawns") serverInstance.roles.pawns = roleIDs[j];
+                else if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "@everyone") serverInstance.roles.everyone = roleIDs[j];
+            }
+            this._serverKeys[serverIDs[i]] = serverInstance;
         }
     }
 
@@ -425,12 +564,17 @@ class BlunderBot extends Discord.Client {
         return game;
     }
 
-    async generateBoardImage(board, gameID) {
-        return await this._imageCreator.createImage({type: 'array', board: board, path: './resources/rendered/' + gameID + '.png'});
+    async generateBoardImage(data, gameID) {
+        return await this._imageCreator.createImage({type: 'array', data: data, path: './resources/rendered/' + gameID + '.png'});
     }
 
-    notSetup(channelID, command) {
-        this.sendMessage({to: channelID, message: 'This server is not setup for that yet.\nUse `bb!setup` to use `' + command + '`'});
+        // I thought it was tedious to do this each time so heres a function that makes it like sending messages.
+    // @params options = { to: channelID, file: path }
+    async sendImage(options) {
+        let pathSplit = await options.file.split('/');
+        let filename = pathSplit[pathSplit.length - 1];
+        let file = await fs.readFileSync(options.file);
+        this.uploadFile( { to: options.to, file: file, filename: filename});
     }
 
     processBoard(fen) {
@@ -492,147 +636,6 @@ class BlunderBot extends Discord.Client {
         }
         data["Moves"] = moves;
         return data;
-    }
-
-
-    async updateGames() {
-
-    }
-
-    // bb!help
-    // Lists Available commands
-    helpCommand(channelID) {
-        let message = "";
-        message += "**BlunderBot Commands:**\n";
-        message += "`bb!check`\n\t\t- *Mate!*\n";
-        message += "`bb!help`\n\t\t- *List of commands.*\n";
-        message += "`bb!setup`\n\t\t- *Reorginize server for BlunderBot.*\n";
-        message += "`bb!game <player1> <player2> <gameID>`\n\t\t- *Create a new chat and start tracking a game.*\n\t\t- *GameID only needed if you have more than 1 active game.*\n\t\t- *Run in `lobby-ag`*\n";
-        message += "`bb!tournament <player> <player>...`\n\t\t- *Create new tournament.*\n\t\t- *Optionally add `double-elim` before player names.*\n\t\t- *Run in `lobby-t`*\n";
-        message += "`bb!archive games <player>`\n\t\t- *View list of archived games.*\n\t\t- *Run in `access`*\n";
-        message += "`bb!archive games <player> <index>`\n\t\t- *Choose a game by index to run through.*\n\t\t- *Run in `access`*\n";
-        message += "`bb!archive profile <player>`\n\t\t- *View a player's stats.*\n\t\t- *Run in `access`*\n";
-        this.sendMessage({to: channelID, message: message});
-    }
-
-    // bb!*
-    // For Blunders
-    invalidCommand(channelID) {
-        this.sendMessage({to: channelID, message: 'That\'s a Blunder.\nTry `bb!help` for options.'});
-    }
-
-    // Ensures commands are being run the right channel.
-    async checkChannel(cmd, channel, channelID, evt) {
-        let schema = this._channels.map(channel => channel.name);
-        let index = schema.indexOf(channel);
-        if (index == -1) {
-            return true;
-        } else if (!(cmd in this._permissions)) {
-            this.invalidCommand(channelID);
-            return false;
-        } else if (this._permissions[cmd][index]){
-            return true;
-        } else {
-            let valid = "";
-            for (let i = 0; i < this._permissions[cmd].length; i++) 
-                if (this._permissions[cmd][i]) 
-                    valid += " `" + schema[i] + "`";
-            try {
-            //console.log( await this._discordAPI.delete('/channels/' + channelID + '/messages/' + evt.d.id));
-            this.sendMessage({to: channelID, message: 'Blunder.\nThis command can only be run in' + valid + '.\n'});
-            } catch(error) {
-                console.log(error);
-            }
-        }
-    }
-
-    // Sets some variables
-    async inicializeServerStructure() {
-        this._permissions = {
-            'check': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'sorry': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'cyrus': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'blunder': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'start': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'hi': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'Qh5': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'help': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'setup': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            'game': [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-            'tournament': [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-            'archive': [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-        };
-        this._channels = [
-            {name: 'welcome', type: 0, topic: '', position: 0, permission_overwrites: true, category: null},
-            {name: 'general', type: 0, topic: 'General chat', position: 0, permission_overwrites: false, category: '\u265F General'},
-            {name: 'leaderboards', type: 0, topic: 'Leaderboards and winnings.', position: 1, permission_overwrites: true, category: '\u265F General'},
-            {name: 'discussion', type: 2, topic: 'General voice channel.', position: 2, permission_overwrites: false, category: '\u265F General'},
-            {name: 'lobby-ag', type: 0, topic: 'Start tracking games.', position: 0, permission_overwrites: false, category: '\u265A Active Games'},
-            {name: 'lobby-t', type: 0, topic: 'Start tournaments.', position: 0, permission_overwrites: false, category: '\u265C Tournament'},
-            {name: 'tournament', type: 0, topic: 'Brackets and stats on current tournament.', position: 1, permission_overwrites: true, category: '\u265C Tournament'},
-            {name: 'access', type: 0, topic: 'View Archive Data.', position: 0, permission_overwrites: false, category: '\u265D Archive'},
-            {name: 'game-archive', type: 0, topic: 'Blunder Bot\'s chat for storing game data.', position: 1, permission_overwrites: true, category: '\u265D Archive'},
-            {name: 'profile-archive', type: 0, topic: 'Blunder Bot\'s chat for storing user information (win / loss rate)', position: 2, permission_overwrites: true, category: '\u265D Archive'},
-        ];
-        this._categories = {
-            '\u265F General': {present: false, topic: "General Channels.", position: 1},
-            '\u265A Active Games': {present: false, topic: "Text channels and live updates from tracked games.", position: 2},
-            '\u265C Tournament': {present: false, topic: "Tournament matches", position: 3},
-            '\u265D Archive': {present: false, topic: "Stores relevent data to users and past games. View old games or stats.", position: 4},
-        };
-    }
-    // Servers, Roles and Channels are stored in the Discord.io bot linked only by ID's
-    // Instead of searching for the right channel in the right server each time, this function saves ID's relevent to each server.
-    async processCurrentServers() {
-        this._serverKeys = {};
-        let serverIDs = Object.keys(this.servers);
-        for (let i = 0; i < serverIDs.length; i++) {
-            let serverInstance = {
-                setup: false,
-                channels: {
-                    'welcome': null,
-                    'general': null,
-                    'leaderboards': null,
-                    'discussion': null,
-                    'lobby-ag': null,
-                    'lobby-t': null,
-                    'tournament': null,
-                    'access': null,
-                    'game-archive': null,
-                    'profile-archive': null,
-                },
-                categories: {
-                    '\u265F General': null,
-                    '\u265A Active Games': null,
-                    '\u265C Tournament': null,
-                    '\u265D Archive':null
-                },
-                roles: {
-                    king: null,
-                    queen: null,
-                    pawns: null,
-                    everyone: null,
-                },
-            }
-            let channelIDs = Object.keys(this.channels);
-            for (let j = 0; j < channelIDs.length; j++) {
-                if (this.channels[channelIDs[j]].guild_id != serverIDs[i]) continue;
-                if (this.channels[channelIDs[j]].name in serverInstance.channels) {
-                    serverInstance.channels[this.channels[channelIDs[j]].name] = channelIDs[j];
-                } else if (this.channels[channelIDs[j]].name in serverInstance.categories) {
-                    serverInstance.setup = true;
-                    serverInstance.categories[this.channels[channelIDs[j]].name] = channelIDs[j];
-                }
-            }
-            let roleIDs = Object.keys(this.servers[serverIDs[i]].roles)
-            for (let j = 0; j < roleIDs.length; j++) {
-                if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "king") serverInstance.roles.king = roleIDs[j];
-                else if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "queen") serverInstance.roles.queen = roleIDs[j];
-                else if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "pawns") serverInstance.roles.pawns = roleIDs[j];
-                else if (this.servers[serverIDs[i]].roles[roleIDs[j]].name == "@everyone") serverInstance.roles.everyone = roleIDs[j];
-            }
-            this._serverKeys[serverIDs[i]] = serverInstance;
-        }
     }
 }
 
