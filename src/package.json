@@ -1,8 +1,8 @@
 {
   "name": "blunderbot",
   "version": "1.0.0",
-  "description": "Discord bot that pairs with chess.com",
-  "main": "index.js",
+  "description": "Discord bot for chess.com clubs.",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
@@ -11,23 +11,21 @@
     "url": "git+https://github.com/andyruwruw/BlunderBot.git"
   },
   "keywords": [
-    "discord",
-    "bot",
-    "chess.com",
-    "chess"
+    "Chess",
+    "Discord",
+    "Bot"
   ],
   "author": "Andrew Young",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/andyruwruw/BlunderBot/issues"
   },
   "homepage": "https://github.com/andyruwruw/BlunderBot#readme",
   "dependencies": {
     "axios": "^0.19.2",
-    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
-    "dotenv": "^8.2.0",
-    "fs": "0.0.1-security",
-    "jimp": "^0.9.3",
-    "winston": "^3.2.1"
+    "canvas-renderer": "^2.2.0",
+    "chess.js": "^0.10.2",
+    "discord.js": "^11.5.1",
+    "dotenv": "^8.2.0"
   }
 }
