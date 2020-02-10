@@ -1,5 +1,7 @@
 // Dependencies
 let Discord = require('discord.js');
+let ChessWebAPI = require('chess-web-api');
+let ChessImageGenerator = require('chess-image-generator');
 
 // Inherits from Discord.js Client
 // Adds functionality for chess.
@@ -19,6 +21,11 @@ class BlunderBot extends Discord.Client {
             liveMatches: [],
             tournament: null,
         }
+        // Libraries I wrote just for this :')
+        this._chessWebAPI = new ChessWebAPI({
+            queue: true,
+        });
+        this._imageGenerator = new ChessImageGenerator();
     }
 
     // Upon Connection to Discord => Log Instance
@@ -37,9 +44,6 @@ class BlunderBot extends Discord.Client {
         // Checks if correct channel
         if (!(await this.commandChannelValid(cmd, message.channel))) return;
         // split commands
-        switch (cmd) {
-            case 
-        }
 
 
         console.log(message);
@@ -50,7 +54,7 @@ class BlunderBot extends Discord.Client {
     }
 
     generalCommands(message, cmd, args) {
-        switch
+        
     }
 
     gameCommands(message) {

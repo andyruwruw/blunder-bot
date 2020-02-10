@@ -24,6 +24,8 @@
   "dependencies": {
     "axios": "^0.19.2",
     "canvas-renderer": "^2.2.0",
+    "chess-image-generator": "^1.0.0",
+    "chess-web-api": "^1.0.0",
     "chess.js": "^0.10.2",
     "discord.js": "^11.5.1",
     "dotenv": "^8.2.0"

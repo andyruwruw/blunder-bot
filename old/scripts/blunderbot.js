@@ -1,9 +1,7 @@
 // Dependencies
 let Discord = require('discord.io');
-let ChessAPI = require('./chessapi.js');
-let BoardToImage = require('./boardtoimage.js');
-let fs = require('fs');
-let axios = require('axios');
+let ChessWebAPI = require('chess-web-api');
+let ChessImageGenerator = require('chess-image-generator');
 
 // Inherits from Discord.io Web Socket
 // Adds functionality
@@ -32,9 +30,11 @@ class BlunderBot extends Discord.Client {
         }); // All Axios calls to discord will now be verified
         // Chess API Object manages queue and requests.
         // Passes instance so it can call post-call functions
-        this._chessAPI = new ChessAPI(this);
+        this._chessWebAPI = new ChessWebAPI({
+            queue: true,
+        });
+        this._imageGenerator = new ChessImageGenerator();
         this._trackedGames = [];
-        this._imageCreator = new BoardToImage();
         this._interval = null;
     }
 
