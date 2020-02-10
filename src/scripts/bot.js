@@ -34,7 +34,7 @@ class BlunderBot extends Discord.Client {
     }
 
     // Upon Discord Message
-    handleMessage(message) {
+    async handleMessage(message) {
         // Check if its a relevent command.
         if (message.content.substring(0, 8) != 'blunder/') return;
         // Parse Arguments
@@ -44,26 +44,76 @@ class BlunderBot extends Discord.Client {
         // Checks if correct channel
         if (!(await this.commandChannelValid(cmd, message.channel))) return;
         // split commands
-
-
-        console.log(message);
+        switch(cmd) {
+            case 'help':
+                this.blunderHelp(message.channel);
+                break;
+            case 'check':
+                break;
+            case 'Qh5':
+                break;
+            case 'hi':
+                break;
+            case 'sorry':
+                break;
+            case 'register':
+                break;
+            case 'track':
+                break;
+            case 'stop':
+                break;
+            case 'public': 
+                break;
+            case 'print':
+                break;
+            case 'tournament':
+                break;
+            case 'archive':
+                break;
+            case 'setup':
+                break;
+            default:
+                this.invalidCommand(message.channel);
+                break;
+        }
     }
 
     commandChannelValid(cmd, channel) {
-        
+        console.log(cmd);
+        let cmds = {
+            'help': true,
+            'check': true,
+            'Qh5': true,
+            'hi': true,
+            'sorry': true,
+
+            'register': ['general', 'commands'],
+
+            'track': ['commands'],
+            'stop': ['game'],
+            'public': ['game'],
+            'print': ['game'],
+
+            'tournament': ['commands'],
+
+            'archive': ['access'],
+
+            'setup': ['settings'],
+        };
+        if (!(cmd in cmds)) {
+            return this.invalidCommand(channel);
+        }
+        else if (typeof cmds[cmd] == 'boolean') return cmds[cmd];
+        else if (cmds[cmd].includes(channel.name)) return true;
+        else if (cmds[cmd].includes('game') && channel.guild.channels[channel.parentID].name.substring(2) == "Active Daily Matches") return true;
+        return false;
+    } 
+
+    invalidCommand(channel) {
+        channel.sendMessage("Blunder.\nInvalid command. Try `blunder/help`.");
+        return false;
     }
 
-    generalCommands(message, cmd, args) {
-        
-    }
-
-    gameCommands(message) {
-
-    }
-
-    adminCommands(message) {
-
-    }
 
 /////////////////////////////////////////////////////////////////
 // GENERAL //////////////////////////////////////////////////////
