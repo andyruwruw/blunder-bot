@@ -20,6 +20,12 @@ class BlunderBot extends Discord.Client {
             dailyMatches: [],
             liveMatches: [],
             tournament: null,
+            commandColors: {
+                'any': '#03cffc',
+                'game': '#fca903',
+                'command': '#03fc73',
+                'archive': '#ca03fc'
+            }
         }
         // Libraries I wrote just for this :')
         this._chessWebAPI = new ChessWebAPI({
@@ -87,12 +93,12 @@ class BlunderBot extends Discord.Client {
             'hi': true,
             'sorry': true,
 
-            'register': ['general', 'commands'],
+            'register': ['commands'],
 
             'track': ['commands'],
             'stop': ['game'],
             'public': ['game'],
-            'print': ['game'],
+            'display': ['game'],
 
             'tournament': ['commands'],
 
@@ -122,7 +128,30 @@ class BlunderBot extends Discord.Client {
     // blunder/help
     // Prints available commands.
     blunderHelp(channel) {
-        channel.send("Blunder Commands:");
+        const anyChannel = new Discord.RichEmbed()
+        .setColor(this.blunder.commandColors.any)
+        .setTitle('Any Channel')
+        .addField('blunder/help', 'List of available commands.')
+        channel.send(anyChannel);
+        const commandChannel = new Discord.RichEmbed()
+        .setColor(this.blunder.commandColors.command)
+        .setTitle('Command Channel')
+        .setImage('./assets/messages/commandhelp.png')
+        channel.send(commandChannel);
+        const gameChannel = new Discord.RichEmbed()
+        .setColor(this.blunder.commandColors.game)
+        .setTitle('Tracked Game Channels')
+        .addField('blunder/stop', 'Stops tracking game and deletes channel.')
+        .addField('blunder/public', 'Toggles channel\'s visability to other members besides opponents.')
+        .addField('blunder/display', 'Change the way moves are displayed.\nOptions: fen, png, ascii, move, none.')
+        channel.send(gameChannel);
+        const accessChannel = new Discord.RichEmbed()
+        .setColor(this.blunder.commandColors.archive)
+        .setTitle('Archive Access Channel')
+        .addField('blunder/archive profile <Chess.com Username>', 'Display user\'s profile information.')
+        .addField('blunder/archive games <Chess.com Username>', 'Display user\'s games. Requires they were tracked.')
+        .addField('blunder/archive games <Chess.com Username> <index>', 'Selects a certain game to view.')
+        channel.send(accessChannel);
     }
 
     // blunder/help archive
@@ -168,7 +197,7 @@ class BlunderBot extends Discord.Client {
 
     // blunder/public
 
-    // blunder/print [fen, png, gif, ascii, move, none]
+    // blunder/displaly [fen, png, gif, ascii, move, none]
 
 /////////////////////////////////////////////////////////////////
 // ADMIN ////////////////////////////////////////////////////////
